@@ -1,0 +1,23 @@
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+
+# Local / extracted docs
+guia-extracted.txt
+
+# Backend (Java)
+tractor-store-backend/target/
+
+# Frontend (Node / Nx / Angular)
+tractor-store-frontend/node_modules/
+tractor-store-frontend/dist/
+tractor-store-frontend/coverage/
+tractor-store-frontend/.angular/
+tractor-store-frontend/.nx/cache
+tractor-store-frontend/.nx/workspace-data
+tractor-store-frontend/tmp/
+tractor-store-frontend/out-tsc/
