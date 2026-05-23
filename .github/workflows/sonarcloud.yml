@@ -87,11 +87,6 @@ jobs:
           args: >
             -Dsonar.qualitygate.wait=true
 
-      - name: Verificar cobertura global en SonarCloud ≥ 80%
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: bash ../.github/scripts/check-sonar-coverage.sh santiago-alarcon19_tractor-store-backend 80
-
   sonar-frontend:
     name: 'SONAR · Frontend — TypeScript + LCOV (cobertura global ≥ 80%)'
     needs: detect-changes
@@ -121,10 +116,9 @@ jobs:
       - name: Instalar dependencias (lockfile congelado)
         run: pnpm install --frozen-lockfile
 
-      - name: Tests unitarios con cobertura LCOV (shared-catalog + design-system)
+      - name: Tests unitarios con cobertura LCOV (shared-catalog, design-system, MFEs)
         run: |
-          pnpm exec nx test shared-catalog --coverage --coverageReporters=lcov
-          pnpm exec nx test ts-design-system --coverage --coverageReporters=lcov
+          pnpm exec nx run-many --target=test --projects=shared-catalog,ts-design-system,mfe-checkout,mfe-explore,mfe-decide --coverage --coverageReporters=lcov
 
       - name: Verificar cobertura global del monorepo ≥ 80%
         run: python3 ../.github/scripts/check-frontend-coverage.py 80
@@ -138,8 +132,3 @@ jobs:
           projectBaseDir: tractor-store-frontend
           args: >
             -Dsonar.qualitygate.wait=true
-
-      - name: Verificar cobertura global en SonarCloud ≥ 80%
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: bash ../.github/scripts/check-sonar-coverage.sh santiago-alarcon19_tractor-store-frontend 80

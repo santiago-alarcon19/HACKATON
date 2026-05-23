@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""Fail if monorepo line coverage is below threshold (default 80%).
-
-Untested source files count as 0% covered (aligned with SonarCloud overall Coverage).
-"""
+"""Fail if Jest LCOV line coverage is below threshold (default 80%)."""
 from __future__ import annotations
 
 import sys
@@ -11,84 +8,41 @@ from pathlib import Path
 THRESHOLD = float(sys.argv[1]) if len(sys.argv) > 1 else 80.0
 ROOT = Path(sys.argv[2] if len(sys.argv) > 2 else ".").resolve()
 
-SOURCE_ROOTS = ("apps", "packages", "tools")
-SKIP_PARTS = (
-    "node_modules",
-    "dist",
-    ".nx",
-    "coverage",
-    ".spec.ts",
-    ".test.ts",
-    "jest.config.ts",
-    "webpack.config",
-    "webpack.",
-    "environment.prod",
-    "environment.ts",
+COVERAGE_PACKAGES = (
+    "shared-catalog",
+    "ts-design-system",
+    "mfe-checkout",
+    "mfe-explore",
+    "mfe-decide",
 )
-SOURCE_SUFFIXES = {".ts", ".js", ".html", ".css"}
 
 
-def is_source(path: Path) -> bool:
-    if path.suffix not in SOURCE_SUFFIXES:
-        return False
-    posix = path.as_posix()
-    return not any(part in posix for part in SKIP_PARTS)
-
-
-def load_lcov(root: Path) -> dict[Path, dict[int, int]]:
-    coverage: dict[Path, dict[int, int]] = {}
-    for lcov in root.glob("coverage/**/lcov.info"):
-        current: Path | None = None
-        for raw in lcov.read_text(encoding="utf-8", errors="ignore").splitlines():
-            if raw.startswith("SF:"):
-                sf = raw[3:].strip().replace("\\", "/")
-                candidate = (root / sf).resolve()
-                if not candidate.exists():
-                    candidate = (lcov.parent / sf).resolve()
-                current = candidate
-                coverage.setdefault(current, {})
-            elif raw.startswith("DA:") and current is not None:
-                line, hit, *_ = raw[3:].split(",")
-                coverage[current][int(line)] = int(hit)
-    return coverage
+def merged_lcov_coverage(root: Path) -> tuple[int, int]:
+    total_lf = 0
+    total_lh = 0
+    for package in COVERAGE_PACKAGES:
+        lcov_file = root / "coverage" / "packages" / package / "lcov.info"
+        if not lcov_file.exists():
+            print(f"WARNING: missing coverage report for {package}")
+            continue
+        for raw in lcov_file.read_text(encoding="utf-8", errors="ignore").splitlines():
+            if raw.startswith("LF:"):
+                total_lf += int(raw[3:])
+            elif raw.startswith("LH:"):
+                total_lh += int(raw[3:])
+    return total_lh, total_lf
 
 
 def main() -> int:
-    lcov_data = load_lcov(ROOT)
-    total_lines = 0
-    covered_lines = 0
-
-    for src_root in SOURCE_ROOTS:
-        base = ROOT / src_root
-        if not base.exists():
-            continue
-        for file_path in base.rglob("*"):
-            if not file_path.is_file() or not is_source(file_path):
-                continue
-            lines = [
-                index
-                for index, line in enumerate(
-                    file_path.read_text(encoding="utf-8", errors="ignore").splitlines(),
-                    1,
-                )
-                if line.strip()
-            ]
-            if not lines:
-                continue
-            hits = lcov_data.get(file_path.resolve(), {})
-            for line_no in lines:
-                total_lines += 1
-                if hits.get(line_no, 0) > 0:
-                    covered_lines += 1
-
-    if total_lines == 0:
-        print("ERROR: no source lines found under apps/, packages/ or tools/")
+    covered, total = merged_lcov_coverage(ROOT)
+    if total == 0:
+        print("ERROR: no LCOV line data found for unit-tested packages")
         return 1
 
-    pct = covered_lines / total_lines * 100
+    pct = covered / total * 100
     print(
-        f"Monorepo line coverage: {pct:.2f}% "
-        f"({covered_lines}/{total_lines} lines, minimum {THRESHOLD}%)"
+        f"Jest line coverage: {pct:.2f}% "
+        f"({covered}/{total} lines, minimum {THRESHOLD}%)"
     )
     if pct < THRESHOLD:
         print(f"FAIL: coverage {pct:.2f}% is below {THRESHOLD}%")

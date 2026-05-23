@@ -73,4 +73,41 @@ describe('CartStore', () => {
     expect(store.itemCount()).toBe(2);
     window.removeEventListener(CHECKOUT_CART_UPDATED, handler);
   });
+
+  it('removeItem updates cart state', async () => {
+    const removePromise = store.removeItem('SKU-1');
+    const delReq = http.expectOne(`${apiBase}/cart/items/SKU-1`);
+    delReq.flush({ items: [], total: 0, currency: 'USD' });
+    await removePromise;
+    expect(store.itemCount()).toBe(0);
+  });
+
+  it('sets error when refresh fails', async () => {
+    const refresh = store.refresh();
+    http.expectOne(`${apiBase}/cart`).error(new ProgressEvent('error'), {
+      status: 500,
+    });
+    await refresh;
+    expect(store.error()).toBeTruthy();
+  });
+
+  it('computes subtotal from loaded cart', async () => {
+    const refresh = store.refresh();
+    http.expectOne(`${apiBase}/cart`).flush({
+      items: [
+        {
+          sku: 'A',
+          name: 'A',
+          image: '/a.jpg',
+          price: 50,
+          quantity: 2,
+        },
+      ],
+      total: 100,
+    });
+    await Promise.resolve();
+    http.expectOne(`${apiBase}/cart/mini`).flush({ quantity: 2 });
+    await refresh;
+    expect(store.subtotal()).toBe(100);
+  });
 });

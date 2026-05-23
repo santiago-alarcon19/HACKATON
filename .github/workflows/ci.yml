@@ -118,10 +118,9 @@ jobs:
         run: pnpm lint
         continue-on-error: true
 
-      - name: Tests unitarios con cobertura LCOV (shared-catalog + design-system)
+      - name: Tests unitarios con cobertura LCOV (shared-catalog, design-system, MFEs)
         run: |
-          pnpm exec nx test shared-catalog --coverage --coverageReporters=lcov
-          pnpm exec nx test ts-design-system --coverage --coverageReporters=lcov
+          pnpm exec nx run-many --target=test --projects=shared-catalog,ts-design-system,mfe-checkout,mfe-explore,mfe-decide --coverage --coverageReporters=lcov
 
       - name: Verificar cobertura global del monorepo ≥ 80%
         run: python3 ../.github/scripts/check-frontend-coverage.py 80

@@ -9,7 +9,7 @@
     "start:shell": "nx serve shell",
     "build": "nx run-many --target=build --all",
     "test": "nx run-many --target=test --all",
-    "test:coverage": "nx test shared-catalog --coverage --coverageReporters=lcov && nx test ts-design-system --coverage --coverageReporters=lcov",
+    "test:coverage": "nx run-many --target=test --projects=shared-catalog,ts-design-system,mfe-checkout,mfe-explore,mfe-decide --coverage --coverageReporters=lcov",
     "test:cart": "nx test shared-catalog",
     "e2e": "nx e2e shell-e2e",
     "lint": "nx run-many --target=lint --all",
