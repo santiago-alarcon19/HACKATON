@@ -1,5 +1,5 @@
-# SonarCloud — solo el stack que cambió (path filters)
-name: SonarCloud
+# SonarCloud — análisis de calidad y cobertura (Quality Gate ≥ 80%)
+name: Tractor Store — SonarCloud (calidad y cobertura)
 
 on:
   push:
@@ -10,18 +10,20 @@ on:
 
 jobs:
   detect-changes:
-    name: Detect changed paths
+    name: 'Paso 1 · Detectar qué partes del monorepo cambiaron'
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
       shared: ${{ steps.filter.outputs.shared }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Clonar repositorio (historial completo para blame)
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: dorny/paths-filter@v3
+      - name: Aplicar filtros de rutas (backend / frontend / shared)
+        uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
@@ -45,7 +47,7 @@ jobs:
               - '.github/**'
 
   sonar-backend:
-    name: Sonar — Backend
+    name: 'Paso 2a · SonarCloud backend Java — cobertura JaCoCo (mín. 80%)'
     needs: detect-changes
     if: >
       github.event_name == 'workflow_dispatch' ||
@@ -57,11 +59,12 @@ jobs:
         working-directory: tractor-store-backend
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Clonar repositorio (historial completo)
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 21
+      - name: Configurar JDK 21 (Temurin + caché Maven)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -69,19 +72,21 @@ jobs:
           cache: maven
           cache-dependency-path: tractor-store-backend/pom.xml
 
-      - name: Test with coverage
+      - name: Ejecutar tests con cobertura (mvn verify → JaCoCo)
         run: mvn -B verify
 
-      - name: SonarCloud Scan (backend)
+      - name: Enviar análisis a SonarCloud y esperar Quality Gate
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           projectBaseDir: tractor-store-backend
+          args: >
+            -Dsonar.qualitygate.wait=true
 
   sonar-frontend:
-    name: Sonar — Frontend
+    name: 'Paso 2b · SonarCloud frontend TS — cobertura LCOV (mín. 80%)'
     needs: detect-changes
     if: >
       github.event_name == 'workflow_dispatch' ||
@@ -93,30 +98,33 @@ jobs:
         working-directory: tractor-store-frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Clonar repositorio (historial completo)
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up Node.js
+      - name: Configurar Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Enable pnpm
+      - name: Activar pnpm 9.15
         run: corepack enable && corepack prepare pnpm@9.15.0 --activate
 
-      - name: Install dependencies
+      - name: Instalar dependencias (lockfile congelado)
         run: pnpm install --frozen-lockfile
 
-      - name: Tests with coverage
+      - name: Tests unitarios con cobertura LCOV (shared-catalog + design-system)
         run: |
           pnpm exec nx test shared-catalog --coverage --coverageReporters=lcov
           pnpm exec nx test ts-design-system --coverage --coverageReporters=lcov
 
-      - name: SonarCloud Scan (frontend)
+      - name: Enviar análisis a SonarCloud y esperar Quality Gate
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           projectBaseDir: tractor-store-frontend
+          args: >
+            -Dsonar.qualitygate.wait=true

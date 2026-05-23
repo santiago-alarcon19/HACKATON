@@ -1,5 +1,5 @@
-# CI — solo ejecuta el stack que cambió (path filters)
-name: CI
+# CI — build, tests y smoke end-to-end (path filters por stack)
+name: Tractor Store — CI (build, tests y smoke)
 
 on:
   push:
@@ -14,18 +14,20 @@ concurrency:
 
 jobs:
   detect-changes:
-    name: Detect changed paths
+    name: 'Paso 1 · Detectar qué partes del monorepo cambiaron'
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
       shared: ${{ steps.filter.outputs.shared }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Clonar repositorio (historial completo)
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: dorny/paths-filter@v3
+      - name: Aplicar filtros de rutas (backend / frontend / shared)
+        uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
@@ -49,7 +51,7 @@ jobs:
               - '.github/**'
 
   backend:
-    name: Backend (Maven)
+    name: 'Paso 2a · Backend Spring Boot — Maven verify + JaCoCo'
     needs: detect-changes
     if: >
       github.event_name == 'workflow_dispatch' ||
@@ -61,9 +63,10 @@ jobs:
         working-directory: tractor-store-backend
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Configurar JDK 21 (Temurin + caché Maven)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -71,10 +74,10 @@ jobs:
           cache: maven
           cache-dependency-path: tractor-store-backend/pom.xml
 
-      - name: Run tests
+      - name: Ejecutar tests de integración y unitarios (mvn verify)
         run: mvn -B verify -DskipTests=false
 
-      - name: Upload JaCoCo report
+      - name: Publicar reporte JaCoCo (artefacto)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -83,7 +86,7 @@ jobs:
           retention-days: 7
 
   frontend:
-    name: Frontend (Nx)
+    name: 'Paso 2b · Frontend Angular Nx — lint, tests, cobertura y build'
     needs: detect-changes
     if: >
       github.event_name == 'workflow_dispatch' ||
@@ -95,36 +98,37 @@ jobs:
         working-directory: tractor-store-frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Configurar Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Enable pnpm
+      - name: Activar pnpm 9.15
         run: corepack enable && corepack prepare pnpm@9.15.0 --activate
 
-      - name: Install dependencies
+      - name: Instalar dependencias (lockfile congelado)
         run: pnpm install --frozen-lockfile
 
-      - name: Lint (non-blocking)
+      - name: Lint ESLint (no bloqueante)
         run: pnpm lint
         continue-on-error: true
 
-      - name: Unit tests with coverage
+      - name: Tests unitarios con cobertura LCOV (shared-catalog + design-system)
         run: |
           pnpm exec nx test shared-catalog --coverage --coverageReporters=lcov
           pnpm exec nx test ts-design-system --coverage --coverageReporters=lcov
 
-      - name: Production build
+      - name: Build de producción (shell + 3 MFEs)
         run: |
           pnpm exec nx build shell --configuration=production
           pnpm exec nx build mfe-explore --configuration=production
           pnpm exec nx build mfe-decide --configuration=production
           pnpm exec nx build mfe-checkout --configuration=production
 
-      - name: Upload coverage (if generated)
+      - name: Publicar cobertura frontend (artefacto)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -134,7 +138,7 @@ jobs:
           if-no-files-found: ignore
 
   docker-compose-smoke:
-    name: Docker Compose smoke
+    name: 'Paso 3 · Smoke E2E — docker compose (API + frontend)'
     needs: [detect-changes, backend, frontend]
     if: >
       always() &&
@@ -154,12 +158,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
 
-      - name: Build and start stack
+      - name: Levantar stack completo (PostgreSQL + API + frontend)
         run: docker compose up --build -d
 
-      - name: Wait for API health
+      - name: Esperar health check de la API (GET /api/catalog/home)
         run: |
           for i in $(seq 1 60); do
             if curl -sf http://localhost:8081/api/catalog/home > /dev/null; then
@@ -172,7 +177,7 @@ jobs:
           docker compose logs api
           exit 1
 
-      - name: Wait for frontend
+      - name: Esperar frontend accesible (GET /)
         run: |
           for i in $(seq 1 30); do
             if curl -sf http://localhost/ > /dev/null; then
@@ -185,6 +190,6 @@ jobs:
           docker compose logs frontend
           exit 1
 
-      - name: Tear down
+      - name: Detener contenedores y limpiar volúmenes
         if: always()
         run: docker compose down -v

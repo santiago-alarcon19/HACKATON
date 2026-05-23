@@ -53,3 +53,29 @@ O: **Actions** → **SonarCloud** → **Run workflow**
 
 - GitHub → **Actions** → job **Sonar — Backend** / **Sonar — Frontend**
 - SonarCloud → **Projects** → Issues, Coverage, Quality Gate
+
+## 7. Quality Gate — cobertura mínima 80%
+
+El workflow espera el Quality Gate (`sonar.qualitygate.wait=true`). **Debes crear la regla en SonarCloud** (no se puede definir solo desde el repo):
+
+1. SonarCloud → organización **santiago-alarcon19** → **Quality Gates**
+2. **Create** → nombre: `Tractor Store — 80% coverage`
+3. **Add Condition**:
+   - **Metric:** Coverage
+   - **Operator:** is less than
+   - **Value:** `80`
+   - **On:** Overall Code (código existente)
+   - **Level:** Error
+4. **Set as Default** (o asigna este gate a los proyectos backend y frontend)
+5. Vuelve a ejecutar el workflow **Tractor Store — SonarCloud**
+
+Si la cobertura está por debajo del 80%, el job fallará con `QUALITY GATE STATUS: FAILED`.
+
+Cobertura actual aproximada (referencia):
+
+| Proyecto  | Cobertura actual | ¿Pasa 80%? |
+|-----------|------------------|------------|
+| Backend   | ~64%             | No         |
+| Frontend  | ~17%             | No         |
+
+Hasta subir tests/cobertura, Sonar fallará a propósito.
