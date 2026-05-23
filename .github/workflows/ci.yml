@@ -1,5 +1,7 @@
 # CI — build, tests y smoke end-to-end (path filters por stack)
-name: Tractor Store — CI (build, tests y smoke)
+name: CI · Build, tests y smoke
+
+run-name: 'CI · Build, tests y smoke · ${{ github.ref_name }}'
 
 on:
   push:
@@ -14,7 +16,7 @@ concurrency:
 
 jobs:
   detect-changes:
-    name: 'Paso 1 · Detectar qué partes del monorepo cambiaron'
+    name: 'CI · Detectar cambios (backend / frontend / shared)'
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
@@ -51,7 +53,7 @@ jobs:
               - '.github/**'
 
   backend:
-    name: 'Paso 2a · Backend Spring Boot — Maven verify + JaCoCo'
+    name: 'CI · Backend — Maven verify + JaCoCo'
     needs: detect-changes
     if: >
       github.event_name == 'workflow_dispatch' ||
@@ -74,7 +76,7 @@ jobs:
           cache: maven
           cache-dependency-path: tractor-store-backend/pom.xml
 
-      - name: Ejecutar tests de integración y unitarios (mvn verify)
+      - name: Ejecutar tests de integración y unitarios (mvn verify + JaCoCo ≥ 80%)
         run: mvn -B verify -DskipTests=false
 
       - name: Publicar reporte JaCoCo (artefacto)
@@ -86,7 +88,7 @@ jobs:
           retention-days: 7
 
   frontend:
-    name: 'Paso 2b · Frontend Angular Nx — lint, tests, cobertura y build'
+    name: 'CI · Frontend — Nx lint, tests, cobertura y build'
     needs: detect-changes
     if: >
       github.event_name == 'workflow_dispatch' ||
@@ -121,6 +123,9 @@ jobs:
           pnpm exec nx test shared-catalog --coverage --coverageReporters=lcov
           pnpm exec nx test ts-design-system --coverage --coverageReporters=lcov
 
+      - name: Verificar cobertura global del monorepo ≥ 80%
+        run: python3 ../.github/scripts/check-frontend-coverage.py 80
+
       - name: Build de producción (shell + 3 MFEs)
         run: |
           pnpm exec nx build shell --configuration=production
@@ -138,7 +143,7 @@ jobs:
           if-no-files-found: ignore
 
   docker-compose-smoke:
-    name: 'Paso 3 · Smoke E2E — docker compose (API + frontend)'
+    name: 'CI · Smoke Docker Compose — API + frontend (solo main/master)'
     needs: [detect-changes, backend, frontend]
     if: >
       always() &&

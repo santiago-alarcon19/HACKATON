@@ -54,28 +54,25 @@ O: **Actions** → **SonarCloud** → **Run workflow**
 - GitHub → **Actions** → job **Sonar — Backend** / **Sonar — Frontend**
 - SonarCloud → **Projects** → Issues, Coverage, Quality Gate
 
-## 7. Quality Gate — cobertura mínima 80%
+## 7. Cobertura mínima 80% (forzada en CI, no solo en Sonar)
 
-El workflow espera el Quality Gate (`sonar.qualitygate.wait=true`). **Debes crear la regla en SonarCloud** (no se puede definir solo desde el repo):
+Sonar Free **no permite** asignar un Quality Gate custom con 80% global. Por eso el repo valida la cobertura **en los pipelines**:
 
-1. SonarCloud → organización **santiago-alarcon19** → **Quality Gates**
-2. **Create** → nombre: `Tractor Store — 80% coverage`
-3. **Add Condition**:
-   - **Metric:** Coverage
-   - **Operator:** is less than
-   - **Value:** `80`
-   - **On:** Overall Code (código existente)
-   - **Level:** Error
-4. **Set as Default** (o asigna este gate a los proyectos backend y frontend)
-5. Vuelve a ejecutar el workflow **Tractor Store — SonarCloud**
+| Stack | Dónde falla | Cómo |
+|-------|-------------|------|
+| **Backend** | CI + SONAR | `jacoco-maven-plugin` → `check` con mínimo **80%** en `mvn verify` |
+| **Frontend** | CI + SONAR | Script `check-frontend-coverage.py` (monorepo completo, archivos sin tests = 0%) |
+| **Sonar dashboard** | SONAR | Script `check-sonar-coverage.sh` lee la métrica `coverage` vía API |
 
-Si la cobertura está por debajo del 80%, el job fallará con `QUALITY GATE STATUS: FAILED`.
+Si la cobertura global está por debajo de **80%**, los jobs **CI · Backend**, **CI · Frontend**, **SONAR · Backend** y **SONAR · Frontend** fallan.
 
-Cobertura actual aproximada (referencia):
+Cobertura actual aproximada:
 
-| Proyecto  | Cobertura actual | ¿Pasa 80%? |
-|-----------|------------------|------------|
-| Backend   | ~64%             | No         |
-| Frontend  | ~17%             | No         |
+| Proyecto | Cobertura global | ¿Pasa 80%? |
+|----------|------------------|------------|
+| Backend  | ~64%             | No         |
+| Frontend | ~17%             | No         |
 
-Hasta subir tests/cobertura, Sonar fallará a propósito.
+Hasta añadir más tests, los pipelines fallarán a propósito.
+
+El gate **Sonar way** (New Code ≥ 80%) sigue activo además; mide solo el código nuevo de cada push.
