@@ -1,0 +1,47 @@
+{
+  "name": "mfe-decide",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "decide",
+  "sourceRoot": "packages/mfe-decide/src",
+  "tags": ["scope:mfe-decide", "type:mfe"],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:webpack-browser",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/mfe-decide",
+        "index": "packages/mfe-decide/src/index.html",
+        "main": "packages/mfe-decide/src/main.ts",
+        "polyfills": ["zone.js"],
+        "tsConfig": "packages/mfe-decide/tsconfig.app.json",
+        "assets": ["packages/mfe-decide/src/assets"],
+        "styles": ["packages/mfe-decide/src/styles.scss"],
+        "customWebpackConfig": {
+          "path": "packages/mfe-decide/webpack.config.js"
+        }
+      },
+      "configurations": {
+        "production": { "outputHashing": "all" },
+        "development": {
+          "buildOptimizer": false,
+          "optimization": false,
+          "vendorChunk": true,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "executor": "@nx/angular:webpack-dev-server",
+      "options": {
+        "port": 4202,
+        "publicHost": "http://localhost:4202",
+        "buildTarget": "mfe-decide:build:development"
+      },
+      "defaultConfiguration": "development"
+    },
+    "lint": { "executor": "@nx/eslint:lint" }
+  }
+}
