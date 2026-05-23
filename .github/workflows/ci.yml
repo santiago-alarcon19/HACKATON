@@ -1,4 +1,4 @@
-# CI — build, tests y smoke end-to-end (path filters por stack)
+# CI — build, tests y smoke end-to-end (PR: stack completo; push: path filters)
 name: CI · Build, tests y smoke
 
 run-name: 'CI · Build, tests y smoke · ${{ github.ref_name }}'
@@ -57,6 +57,7 @@ jobs:
     needs: detect-changes
     if: >
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'pull_request' ||
       needs.detect-changes.outputs.backend == 'true' ||
       needs.detect-changes.outputs.shared == 'true'
     runs-on: ubuntu-latest
@@ -92,6 +93,7 @@ jobs:
     needs: detect-changes
     if: >
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'pull_request' ||
       needs.detect-changes.outputs.frontend == 'true' ||
       needs.detect-changes.outputs.shared == 'true'
     runs-on: ubuntu-latest
@@ -142,20 +144,26 @@ jobs:
           if-no-files-found: ignore
 
   docker-compose-smoke:
-    name: 'CI · Smoke Docker Compose — API + frontend (solo main/master)'
+    name: 'CI · Smoke Docker Compose — API + frontend'
     needs: [detect-changes, backend, frontend]
     if: >
       always() &&
       !cancelled() &&
-      (needs.backend.result == 'success' || needs.backend.result == 'skipped') &&
-      (needs.frontend.result == 'success' || needs.frontend.result == 'skipped') &&
-      github.event_name == 'push' &&
-      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') &&
+      needs.backend.result == 'success' &&
+      needs.frontend.result == 'success' &&
       (
-        needs.detect-changes.outputs.shared == 'true' ||
+        github.event_name == 'pull_request' ||
+        github.event_name == 'workflow_dispatch' ||
         (
-          needs.detect-changes.outputs.backend == 'true' &&
-          needs.detect-changes.outputs.frontend == 'true'
+          github.event_name == 'push' &&
+          (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') &&
+          (
+            needs.detect-changes.outputs.shared == 'true' ||
+            (
+              needs.detect-changes.outputs.backend == 'true' &&
+              needs.detect-changes.outputs.frontend == 'true'
+            )
+          )
         )
       )
 
