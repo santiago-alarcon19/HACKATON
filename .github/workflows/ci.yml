@@ -1,0 +1,189 @@
+# CI — solo ejecuta el stack que cambió (path filters)
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      shared: ${{ steps.filter.outputs.shared }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'tractor-store-backend/**'
+            frontend:
+              - 'tractor-store-frontend/**'
+            shared:
+              - 'docker-compose.yml'
+              - 'DEPLOYMENT.md'
+              - 'README.md'
+              - '.gitignore'
+              - 'database.json'
+              - 'database-index.js'
+              - 'products-blueprint.js'
+              - 'blueprint-tree.json'
+              - 'stores-page.js'
+              - 'store-component.js'
+              - 'search.json'
+              - 'guia-extracted.txt'
+              - '.github/**'
+
+  backend:
+    name: Backend (Maven)
+    needs: detect-changes
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      needs.detect-changes.outputs.backend == 'true' ||
+      needs.detect-changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tractor-store-backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Run tests
+        run: mvn -B verify -DskipTests=false
+
+      - name: Upload JaCoCo report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jacoco
+          path: tractor-store-backend/target/site/jacoco/
+          retention-days: 7
+
+  frontend:
+    name: Frontend (Nx)
+    needs: detect-changes
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      needs.detect-changes.outputs.frontend == 'true' ||
+      needs.detect-changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tractor-store-frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enable pnpm
+        run: corepack enable && corepack prepare pnpm@9.15.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (non-blocking)
+        run: pnpm lint
+        continue-on-error: true
+
+      - name: Unit tests with coverage
+        run: |
+          pnpm exec nx test shared-catalog --coverage --coverageReporters=lcov
+          pnpm exec nx test ts-design-system --coverage --coverageReporters=lcov
+
+      - name: Production build
+        run: |
+          pnpm exec nx build shell --configuration=production
+          pnpm exec nx build mfe-explore --configuration=production
+          pnpm exec nx build mfe-decide --configuration=production
+          pnpm exec nx build mfe-checkout --configuration=production
+
+      - name: Upload coverage (if generated)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: tractor-store-frontend/coverage/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  docker-compose-smoke:
+    name: Docker Compose smoke
+    needs: [detect-changes, backend, frontend]
+    if: >
+      always() &&
+      !cancelled() &&
+      (needs.backend.result == 'success' || needs.backend.result == 'skipped') &&
+      (needs.frontend.result == 'success' || needs.frontend.result == 'skipped') &&
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') &&
+      (
+        needs.detect-changes.outputs.shared == 'true' ||
+        (
+          needs.detect-changes.outputs.backend == 'true' &&
+          needs.detect-changes.outputs.frontend == 'true'
+        )
+      )
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and start stack
+        run: docker compose up --build -d
+
+      - name: Wait for API health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8081/api/catalog/home > /dev/null; then
+              echo "API is up"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "API did not become healthy in time"
+          docker compose logs api
+          exit 1
+
+      - name: Wait for frontend
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost/ > /dev/null; then
+              echo "Frontend is up"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Frontend did not become healthy in time"
+          docker compose logs frontend
+          exit 1
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
