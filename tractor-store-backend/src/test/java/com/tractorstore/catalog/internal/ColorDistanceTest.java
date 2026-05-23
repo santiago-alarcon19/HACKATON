@@ -15,4 +15,10 @@ class ColorDistanceTest {
   void differentColorsHavePositiveDistance() {
     assertThat(ColorDistance.between("#FF0000", "#0000FF")).isPositive();
   }
+
+  @Test
+  void invalidHexIsTreatedAsBlack() {
+    assertThat(ColorDistance.between("bad", "#000000"))
+        .isEqualTo(ColorDistance.between("#000000", "#000000"));
+  }
 }

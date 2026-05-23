@@ -9,7 +9,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tractorstore.notifications.internal.repository.NotificationLogRepository;
 import jakarta.servlet.http.Cookie;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -44,6 +46,7 @@ class CheckoutFlowIntegrationTest {
 
   @Autowired MockMvc mockMvc;
   @Autowired ObjectMapper objectMapper;
+  @Autowired NotificationLogRepository notificationLogRepository;
 
   @Test
   void fullCheckoutFlow() throws Exception {
@@ -92,6 +95,119 @@ class CheckoutFlowIntegrationTest {
         .perform(get("/api/inventory/AU-02-OG"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.quantity").value(24));
+
+    assertThat(notificationLogRepository.count()).isPositive();
+  }
+
+  @Test
+  void getCartReturnsLineItemsAndTotal() throws Exception {
+    MvcResult addResult =
+        mockMvc
+            .perform(
+                post("/api/cart/items")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"sku\":\"AU-02-OG\"}"))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    Cookie sessionCookie = addResult.getResponse().getCookie("TRACTOR_CART_SESSION");
+
+    mockMvc
+        .perform(get("/api/cart").cookie(sessionCookie))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(1))
+        .andExpect(jsonPath("$.total").isNumber());
+  }
+
+  @Test
+  void addingSameSkuIncrementsQuantity() throws Exception {
+    MvcResult addResult =
+        mockMvc
+            .perform(
+                post("/api/cart/items")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"sku\":\"CL-01-GR\"}"))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    Cookie sessionCookie = addResult.getResponse().getCookie("TRACTOR_CART_SESSION");
+
+    mockMvc
+        .perform(
+            post("/api/cart/items")
+                .cookie(sessionCookie)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"sku\":\"CL-01-GR\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].quantity").value(2));
+  }
+
+  @Test
+  void checkoutWithUnknownStoreIsRejected() throws Exception {
+    MvcResult addResult =
+        mockMvc
+            .perform(
+                post("/api/cart/items")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"sku\":\"AU-02-OG\"}"))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    Cookie sessionCookie = addResult.getResponse().getCookie("TRACTOR_CART_SESSION");
+
+    mockMvc
+        .perform(
+            post("/api/orders")
+                .cookie(sessionCookie)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"firstname":"Ada","lastname":"Lovelace","storeId":"unknown-store"}
+                    """))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("STORE_NOT_FOUND"));
+  }
+
+  @Test
+  void getUnknownOrderReturnsNotFound() throws Exception {
+    mockMvc
+        .perform(get("/api/orders/" + UUID.randomUUID()))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("ORDER_NOT_FOUND"));
+  }
+
+  @Test
+  void checkoutValidationFailsForBlankFields() throws Exception {
+    MvcResult addResult =
+        mockMvc
+            .perform(
+                post("/api/cart/items")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"sku\":\"AU-02-OG\"}"))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    Cookie sessionCookie = addResult.getResponse().getCookie("TRACTOR_CART_SESSION");
+
+    mockMvc
+        .perform(
+            post("/api/orders")
+                .cookie(sessionCookie)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"firstname":"","lastname":"","storeId":""}
+                    """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+  }
+
+  @Test
+  void unknownInventorySkuReturnsNotFound() throws Exception {
+    mockMvc
+        .perform(get("/api/inventory/UNKNOWN-SKU"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("VARIANT_NOT_FOUND"));
   }
 
   @Test
