@@ -53,6 +53,7 @@ jobs:
     needs: detect-changes
     if: >
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'pull_request' ||
       needs.detect-changes.outputs.backend == 'true' ||
       needs.detect-changes.outputs.shared == 'true'
     runs-on: ubuntu-latest
@@ -92,6 +93,7 @@ jobs:
     needs: detect-changes
     if: >
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'pull_request' ||
       needs.detect-changes.outputs.frontend == 'true' ||
       needs.detect-changes.outputs.shared == 'true'
     runs-on: ubuntu-latest
