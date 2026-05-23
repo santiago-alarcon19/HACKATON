@@ -1,0 +1,53 @@
+:host {
+  --ts-font-display: 'Fraunces', Georgia, serif;
+  --ts-font-body: 'Outfit', system-ui, sans-serif;
+
+  --ts-green-900: #0a2e1f;
+  --ts-green-800: #0f4530;
+  --ts-green-700: #145c3a;
+  --ts-green-600: #1a7349;
+  --ts-green-500: #1f8f54;
+  --ts-green-100: #d4f0e0;
+  --ts-green-50: #ecf9f1;
+
+  --ts-amber-600: #c8871a;
+  --ts-amber-500: #e6a23c;
+  --ts-amber-400: #f0b429;
+
+  --ts-cream: #faf6ee;
+  --ts-white: #ffffff;
+  --ts-ink: #121816;
+  --ts-ink-muted: #5a6b63;
+
+  --ts-border: rgba(18, 24, 22, 0.12);
+  --ts-shadow-sm: 0 2px 8px rgba(10, 46, 31, 0.06);
+  --ts-shadow-md: 0 8px 24px rgba(10, 46, 31, 0.12);
+  --ts-shadow-lg: 0 16px 40px rgba(10, 46, 31, 0.16);
+
+  --ts-radius-sm: 10px;
+  --ts-radius-md: 14px;
+  --ts-radius-lg: 20px;
+  --ts-radius-pill: 999px;
+
+  --ts-space-xs: 0.35rem;
+  --ts-space-sm: 0.65rem;
+  --ts-space-md: 1rem;
+  --ts-space-lg: 1.5rem;
+
+  --ts-transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+
+  --ts-color-primary: var(--ts-green-700);
+  --ts-color-primary-hover: var(--ts-green-800);
+  --ts-color-accent: var(--ts-amber-500);
+  --ts-color-surface: var(--ts-white);
+  --ts-color-text: var(--ts-ink);
+  --ts-color-muted: var(--ts-ink-muted);
+  --ts-color-border: var(--ts-border);
+  --ts-radius: var(--ts-radius-md);
+  --ts-spacing-sm: var(--ts-space-sm);
+  --ts-spacing-md: var(--ts-space-md);
+  --ts-font-family: var(--ts-font-body);
+
+  font-family: var(--ts-font-family);
+  color: var(--ts-color-text);
+}

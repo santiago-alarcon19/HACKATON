@@ -1,0 +1,739 @@
+/* Tractor Store — global design system */
+
+:root {
+  --ts-font-display: 'Fraunces', Georgia, serif;
+  --ts-font-body: 'Outfit', system-ui, sans-serif;
+
+  --ts-green-950: #061a12;
+  --ts-green-900: #0a2e1f;
+  --ts-green-800: #0f4530;
+  --ts-green-700: #145c3a;
+  --ts-green-600: #1a7349;
+  --ts-green-500: #1f8f54;
+  --ts-green-100: #d4f0e0;
+  --ts-green-50: #ecf9f1;
+
+  --ts-brand-coral: #c45c1a;
+  --ts-rust-600: #8b4512;
+  --ts-rust-500: #b45309;
+  --ts-rust-400: #d97706;
+  --ts-steel-900: #141a18;
+  --ts-steel-800: #1e2825;
+  --ts-steel-700: #2d3b34;
+  --ts-amber-600: #9a4a12;
+  --ts-amber-500: #c45c1a;
+  --ts-amber-400: #d97706;
+  --ts-amber-100: #3d3428;
+
+  --ts-cream: #e8e4dc;
+  --ts-cream-dark: #d4cfc4;
+  --ts-white: #ffffff;
+
+  --ts-ink: #121816;
+  --ts-ink-soft: #2d3b34;
+  --ts-ink-muted: #5a6b63;
+  --ts-ink-faint: #8a9a92;
+
+  --ts-border: rgba(18, 24, 22, 0.1);
+  --ts-border-strong: rgba(18, 24, 22, 0.16);
+
+  --ts-shadow-sm: 0 2px 8px rgba(10, 46, 31, 0.06);
+  --ts-shadow-md: 0 8px 24px rgba(10, 46, 31, 0.1);
+  --ts-shadow-lg: 0 20px 48px rgba(10, 46, 31, 0.14);
+  --ts-shadow-glow: 0 0 0 1px rgba(31, 143, 84, 0.2), 0 12px 32px rgba(31, 143, 84, 0.15);
+
+  --ts-radius-sm: 10px;
+  --ts-radius-md: 14px;
+  --ts-radius-lg: 20px;
+  --ts-radius-xl: 28px;
+  --ts-radius-pill: 999px;
+
+  --ts-space-xs: 0.35rem;
+  --ts-space-sm: 0.65rem;
+  --ts-space-md: 1rem;
+  --ts-space-lg: 1.5rem;
+  --ts-space-xl: 2rem;
+  --ts-space-2xl: 3rem;
+  --ts-space-3xl: 4rem;
+
+  --ts-header-h: 72px;
+  --ts-max-width: 1180px;
+  --ts-transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Legacy aliases for design-system components */
+  --ts-color-primary: var(--ts-green-700);
+  --ts-color-primary-hover: var(--ts-green-800);
+  --ts-color-accent: var(--ts-amber-500);
+  --ts-color-surface: var(--ts-white);
+  --ts-color-text: var(--ts-ink);
+  --ts-color-muted: var(--ts-ink-muted);
+  --ts-color-border: var(--ts-border-strong);
+  --ts-radius: var(--ts-radius-md);
+  --ts-spacing-sm: var(--ts-space-sm);
+  --ts-spacing-md: var(--ts-space-md);
+  --ts-font-family: var(--ts-font-body);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--ts-font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #e0ddd6;
+  position: relative;
+  isolation: isolate;
+  background-color: #1a2220;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    radial-gradient(ellipse 100% 60% at 50% 0%, rgba(26, 80, 55, 0.45), transparent 55%),
+    radial-gradient(ellipse 80% 50% at 100% 100%, rgba(180, 83, 9, 0.15), transparent 50%),
+    linear-gradient(
+      180deg,
+      #1e2825 0%,
+      #242e2b 35%,
+      #2a3532 65%,
+      #1a2220 100%
+    );
+  background-size:
+    48px 48px,
+    48px 48px,
+    auto,
+    auto,
+    auto,
+    auto;
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+}
+
+body::before {
+  background:
+    radial-gradient(circle min(32rem, 60vw) at 75% 90%, rgba(20, 60, 40, 0.35), transparent),
+    radial-gradient(circle min(24rem, 45vw) at 10% 20%, rgba(180, 83, 9, 0.08), transparent);
+  animation: none;
+}
+
+body::after {
+  z-index: -1;
+  opacity: 0.45;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+  mix-blend-mode: multiply;
+}
+
+@keyframes ts-bg-drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    transform: translate(-1.5%, 2%) scale(1.04);
+  }
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--ts-font-display);
+  font-weight: 700;
+  line-height: 1.15;
+  color: #f0ede6;
+  letter-spacing: -0.02em;
+}
+
+.ts-surface h1,
+.ts-surface h2,
+.ts-surface h3,
+.ts-surface h4,
+.ts-product-card h3,
+.hero h1,
+.category-card__title {
+  color: inherit;
+}
+
+h1 {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+}
+
+h2 {
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+}
+
+p {
+  margin: 0 0 var(--ts-space-md);
+}
+
+a {
+  color: var(--ts-rust-400);
+  text-decoration: none;
+  transition: color var(--ts-transition);
+}
+
+a:hover {
+  color: #f59e0b;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ——— Layout utilities ——— */
+
+.ts-page {
+  max-width: var(--ts-max-width);
+  margin: 0 auto;
+  padding: var(--ts-space-xl) var(--ts-space-lg);
+  animation: ts-fade-in 0.5s ease;
+}
+
+.ts-section {
+  margin-bottom: var(--ts-space-3xl);
+}
+
+.ts-section__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ts-space-md);
+  margin-bottom: var(--ts-space-xl);
+  flex-wrap: wrap;
+}
+
+.ts-section__label {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ts-rust-400);
+  margin-bottom: var(--ts-space-xs);
+}
+
+.ts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--ts-space-xl);
+}
+
+.ts-surface {
+  background: rgba(30, 40, 36, 0.88);
+  backdrop-filter: blur(14px) saturate(1.05);
+  -webkit-backdrop-filter: blur(14px) saturate(1.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--ts-radius-md);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 20px 50px rgba(0, 0, 0, 0.35);
+  color: #e8e4dc;
+}
+
+/* Decorative shell backdrop — use inside layout roots */
+.ts-scene {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  --ts-scroll-y: 0px;
+  --ts-scroll-progress: 0;
+}
+
+.ts-scene__bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Industrial sky — overcast field, no cartoon sun */
+.ts-scene__sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    #2a3532 0%,
+    #242e2b 22%,
+    rgba(26, 40, 36, 0.85) 45%,
+    transparent 68%
+  );
+}
+
+.ts-scene__sun,
+.ts-scene__clouds {
+  display: none;
+}
+
+/* Rolling hills + optional field photo */
+.ts-scene__horizon {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: min(48vh, 420px);
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(46, 120, 70, 0.12) 30%),
+    url('https://blueprint.the-tractor.store/cdn/img/scene/500/classics.webp')
+      center bottom / cover no-repeat;
+  opacity: calc(0.62 + var(--ts-scroll-progress) * 0.2);
+  filter: contrast(1.12) saturate(0.85);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 100%);
+  will-change: transform;
+  transform: translate3d(0, calc(var(--ts-scroll-y) * 0.2), 0)
+    scale(calc(1 + var(--ts-scroll-progress) * 0.06));
+  transform-origin: center bottom;
+}
+
+.ts-scene__horizon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(10, 30, 22, 0.55) 30%,
+    rgba(6, 18, 14, 0.92) 100%
+  );
+}
+
+/* Crop furrows — perspective field rows */
+.ts-scene__furrows {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: 0;
+  height: 45%;
+  opacity: calc(0.38 + var(--ts-scroll-progress) * 0.15);
+  background: repeating-linear-gradient(
+    95deg,
+    transparent 0px,
+    transparent 28px,
+    rgba(20, 92, 58, 0.08) 28px,
+    rgba(20, 92, 58, 0.08) 32px
+  );
+  transform: perspective(400px) rotateX(52deg)
+    translate3d(0, calc(var(--ts-scroll-y) * 0.1), 0);
+  transform-origin: center bottom;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 55%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 55%);
+}
+
+/* Industrial shed silhouette */
+.ts-scene__barn {
+  position: absolute;
+  right: 4%;
+  bottom: 12%;
+  width: min(180px, 28vw);
+  height: min(100px, 16vw);
+  opacity: calc(0.45 + var(--ts-scroll-progress) * 0.2);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 100'%3E%3Cpath fill='%23141a18' d='M15 88h150v12H15z'/%3E%3Cpath fill='%232a3330' d='M28 42h124v46H28z'/%3E%3Cpath fill='%231e2825' d='M90 8L8 48h164L90 8z'/%3E%3Cpath fill='%23b45309' d='M90 8L8 48h20l62-32 62 32h20L90 8z' opacity='0.6'/%3E%3Crect fill='%230a0f0e' x='72' y='58' width='36' height='30'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: right bottom;
+  transform: translate3d(0, calc(var(--ts-scroll-y) * 0.1), 0);
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4));
+}
+
+/* Fence along the field */
+.ts-scene__fence {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10%;
+  height: 48px;
+  opacity: calc(0.35 + var(--ts-scroll-progress) * 0.2);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='48' viewBox='0 0 120 48'%3E%3Cg fill='%235a4a3a' opacity='0.5'%3E%3Crect x='4' y='8' width='6' height='32' rx='1'/%3E%3Crect x='28' y='8' width='6' height='32' rx='1'/%3E%3Crect x='52' y='8' width='6' height='32' rx='1'/%3E%3Crect x='76' y='8' width='6' height='32' rx='1'/%3E%3Crect x='100' y='8' width='6' height='32' rx='1'/%3E%3Crect x='0' y='14' width='120' height='4' rx='1'/%3E%3Crect x='0' y='28' width='120' height='4' rx='1'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-size: 120px 48px;
+  transform: translate3d(calc(var(--ts-scroll-y) * 0.05), 0, 0);
+}
+
+/* Soft vignette so content stays readable */
+.ts-scene__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 90% 80% at 50% 35%,
+    transparent 25%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+}
+
+.ts-scene__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.35;
+  animation: none;
+}
+
+.ts-scene__orb--1 {
+  width: min(32rem, 70vw);
+  height: min(32rem, 70vw);
+  top: -8%;
+  right: -6%;
+  background: radial-gradient(circle, rgba(20, 80, 50, 0.5), transparent 68%);
+}
+
+.ts-scene__orb--2 {
+  width: min(26rem, 58vw);
+  height: min(26rem, 58vw);
+  bottom: 5%;
+  left: -8%;
+  background: radial-gradient(circle, rgba(180, 83, 9, 0.25), transparent 68%);
+}
+
+.ts-scene__orb--3 {
+  display: none;
+}
+
+.ts-scene__mesh {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      125deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.08) 40%,
+      transparent 60%,
+      rgba(31, 143, 84, 0.05) 100%
+    ),
+    url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 40h80M40 0v80' stroke='%231a7349' stroke-opacity='0.04' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: auto, 80px 80px;
+  opacity: 0.9;
+}
+
+/* Decorative tractor silhouette (very subtle) */
+.ts-scene__silhouette {
+  position: absolute;
+  bottom: 8%;
+  left: 4%;
+  width: min(160px, 24vw);
+  height: min(90px, 14vw);
+  opacity: calc(0.35 + var(--ts-scroll-progress) * 0.12);
+  filter: brightness(0.7) contrast(1.2);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 120'%3E%3Cpath fill='%230a2e1f' d='M20 95h160v8H20zm28-12c0-22 18-40 40-40h24v-18h28v58H68c-22 0-40-18-40-40zm88 0h44l-8-28h-20l-4 28zm-72-8a24 24 0 0 1 24-24h8v48h-8a24 24 0 0 1-24-24zm100 8a20 20 0 1 1 0-40 20 20 0 0 1 0 40zm-100 0a20 20 0 1 1 0-40 20 20 0 0 1 0 40z'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  will-change: transform;
+  transform: translate3d(calc(var(--ts-scroll-y) * 0.14), 0, 0);
+}
+
+.ts-scene--deep-scroll .ts-scene__barn {
+  transform: translate3d(0, calc(var(--ts-scroll-y) * 0.16), 0) scale(1.04);
+}
+
+.ts-scene--deep-scroll .ts-scene__orb--1 {
+  opacity: 0.5;
+}
+
+/* Product detail — tech field at dusk */
+.ts-scene--autonomous .ts-scene__horizon {
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(42, 90, 122, 0.12) 35%),
+    url('https://blueprint.the-tractor.store/cdn/img/scene/500/autonomous.webp')
+      center bottom / cover no-repeat;
+  opacity: 0.48;
+}
+
+.ts-scene--autonomous .ts-scene__sky {
+  background: linear-gradient(
+    180deg,
+    rgba(120, 180, 220, 0.5) 0%,
+    rgba(200, 230, 245, 0.3) 20%,
+    transparent 55%
+  );
+}
+
+.ts-scene--autonomous .ts-scene__barn {
+  display: none;
+}
+
+.ts-scene__content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  color: #e0ddd6;
+}
+
+@keyframes ts-orb-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(2%, -3%) scale(1.05);
+  }
+  66% {
+    transform: translate(-2%, 2%) scale(0.96);
+  }
+}
+
+.ts-link-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ts-ink-muted);
+  margin-bottom: var(--ts-space-lg);
+  padding: var(--ts-space-sm) var(--ts-space-md);
+  border-radius: var(--ts-radius-pill);
+  background: var(--ts-white);
+  border: 1px solid var(--ts-border);
+  box-shadow: var(--ts-shadow-sm);
+  transition:
+    transform var(--ts-transition),
+    box-shadow var(--ts-transition),
+    color var(--ts-transition);
+}
+
+.ts-link-back:hover {
+  color: var(--ts-green-700);
+  transform: translateX(-3px);
+  box-shadow: var(--ts-shadow-md);
+}
+
+/* ——— Forms ——— */
+
+.ts-form {
+  display: grid;
+  gap: var(--ts-space-lg);
+}
+
+.ts-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ts-space-xs);
+}
+
+.ts-field label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ts-ink-muted);
+}
+
+.ts-field input,
+.ts-field select,
+.ts-field textarea {
+  font: inherit;
+  padding: 0.85rem 1rem;
+  border: 1.5px solid var(--ts-border-strong);
+  border-radius: var(--ts-radius-md);
+  background: var(--ts-white);
+  color: var(--ts-ink);
+  transition:
+    border-color var(--ts-transition),
+    box-shadow var(--ts-transition);
+}
+
+.ts-field input:focus,
+.ts-field select:focus,
+.ts-field textarea:focus {
+  outline: none;
+  border-color: var(--ts-green-500);
+  box-shadow: 0 0 0 4px rgba(31, 143, 84, 0.15);
+}
+
+.ts-surface .ts-field label {
+  color: #b8c4bc;
+}
+
+.ts-surface .ts-field input,
+.ts-surface .ts-field select,
+.ts-surface .ts-field textarea {
+  background: rgba(10, 14, 12, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  color: #f0ede6;
+}
+
+.ts-surface .ts-field input::placeholder {
+  color: #6a7a72;
+}
+
+.ts-surface .ts-field input:focus,
+.ts-surface .ts-field select:focus,
+.ts-surface .ts-field textarea:focus {
+  border-color: var(--ts-rust-400);
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.28);
+}
+
+.ts-surface .ts-hint {
+  color: #b8c4bc;
+}
+
+.ts-surface .ts-error {
+  color: #ff8a80;
+}
+
+.ts-error {
+  color: #c62828;
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.ts-hint {
+  color: var(--ts-ink-muted);
+  font-size: 0.92rem;
+  max-width: 36rem;
+}
+
+/* ——— Loading ——— */
+
+.ts-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ts-space-md);
+  padding: var(--ts-space-3xl);
+  color: var(--ts-ink-muted);
+}
+
+.ts-loading__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--ts-green-100);
+  border-top-color: var(--ts-green-600);
+  border-radius: 50%;
+  animation: ts-spin 0.8s linear infinite;
+}
+
+@keyframes ts-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ts-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scroll-reveal blocks (use with tsReveal directive) */
+.ts-reveal {
+  opacity: 0;
+  transform: translateY(36px);
+  transition:
+    opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ts-reveal--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ts-reveal.ts-reveal--delay-1 {
+  transition-delay: 0.1s;
+}
+
+.ts-reveal.ts-reveal--delay-2 {
+  transition-delay: 0.2s;
+}
+
+@keyframes ts-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Main content panel — lets the farm scene breathe around edges */
+.ts-scene__frame {
+  position: relative;
+  flex: 1;
+  margin: 0 var(--ts-space-md) var(--ts-space-md);
+  border-radius: var(--ts-radius-xl);
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 20px 60px rgba(10, 46, 31, 0.06);
+  overflow: hidden;
+}
+
+@media (max-width: 720px) {
+  .ts-scene__frame {
+    margin: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .ts-scene__horizon {
+    opacity: 0.32;
+    height: min(36vh, 280px);
+  }
+
+  .ts-scene__sun {
+    width: 4.5rem;
+    height: 4.5rem;
+    top: 4%;
+    right: 6%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  .ts-scene__orb,
+  .ts-scene__sun,
+  .ts-scene__silhouette,
+  .ts-scene__cloud {
+    animation: none;
+  }
+
+  .ts-scene__horizon,
+  .ts-scene__sun,
+  .ts-scene__furrows,
+  .ts-scene__clouds,
+  .ts-scene__barn,
+  .ts-scene__fence,
+  .ts-scene__silhouette {
+    transform: none !important;
+  }
+
+  .ts-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
