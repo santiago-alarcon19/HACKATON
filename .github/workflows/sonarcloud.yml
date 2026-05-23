@@ -67,6 +67,7 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+          cache-dependency-path: tractor-store-backend/pom.xml
 
       - name: Test with coverage
         run: mvn -B verify
