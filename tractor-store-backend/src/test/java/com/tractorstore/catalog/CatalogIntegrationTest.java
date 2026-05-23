@@ -103,6 +103,22 @@ class CatalogIntegrationTest {
   }
 
   @Test
+  void recommendationsWithValidSkusReturnProducts() throws Exception {
+    mockMvc
+        .perform(get("/api/catalog/recommendations").param("skus", "AU-02-OG"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.products.length()").value(org.hamcrest.Matchers.greaterThan(0)));
+  }
+
+  @Test
+  void recommendationsWithUnknownSkusReturnEmpty() throws Exception {
+    mockMvc
+        .perform(get("/api/catalog/recommendations").param("skus", "UNKNOWN-SKU"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.products").isEmpty());
+  }
+
+  @Test
   void storesEndpointListsPickupLocations() throws Exception {
     mockMvc
         .perform(get("/api/catalog/stores"))

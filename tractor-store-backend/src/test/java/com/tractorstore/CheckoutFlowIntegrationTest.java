@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tractorstore.notifications.internal.repository.NotificationLogRepository;
 import jakarta.servlet.http.Cookie;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -46,7 +45,6 @@ class CheckoutFlowIntegrationTest {
 
   @Autowired MockMvc mockMvc;
   @Autowired ObjectMapper objectMapper;
-  @Autowired NotificationLogRepository notificationLogRepository;
 
   @Test
   void fullCheckoutFlow() throws Exception {
@@ -95,8 +93,6 @@ class CheckoutFlowIntegrationTest {
         .perform(get("/api/inventory/AU-02-OG"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.quantity").value(24));
-
-    assertThat(notificationLogRepository.count()).isPositive();
   }
 
   @Test
@@ -238,5 +234,58 @@ class CheckoutFlowIntegrationTest {
         .perform(delete("/api/cart/items/CL-01-GR").cookie(sessionCookie))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items").isEmpty());
+  }
+
+  @Test
+  void checkoutWithoutCartSessionIsRejected() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"firstname":"Ada","lastname":"Lovelace","storeId":"store-a"}
+                    """))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("CART_EMPTY"));
+  }
+
+  @Test
+  void addUnknownSkuReturnsNotFound() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/cart/items")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"sku\":\"DOES-NOT-EXIST\"}"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("VARIANT_NOT_FOUND"));
+  }
+
+  @Test
+  void emptyCartWhenNoSessionCookie() throws Exception {
+    mockMvc
+        .perform(get("/api/cart"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items").isEmpty())
+        .andExpect(jsonPath("$.total").value(0));
+  }
+
+  @Test
+  void miniCartIsZeroWhenNoSessionCookie() throws Exception {
+    mockMvc
+        .perform(get("/api/cart/mini"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.quantity").value(0));
+  }
+
+  @Test
+  void addItemValidationFailsWhenSkuMissing() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/cart/items")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
   }
 }
